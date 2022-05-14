@@ -1,5 +1,6 @@
-import { getRepository, Repository, In } from 'typeorm';
+import { getRepository, Repository } from 'typeorm';
 
+import AppError from '@shared/errors/AppError';
 import IProductsRepository from '@modules/products/repositories/IProductsRepository';
 import ICreateProductDTO from '@modules/products/dtos/ICreateProductDTO';
 import IUpdateProductsQuantityDTO from '@modules/products/dtos/IUpdateProductsQuantityDTO';
@@ -21,21 +22,54 @@ class ProductsRepository implements IProductsRepository {
     price,
     quantity,
   }: ICreateProductDTO): Promise<Product> {
-    // TODO
+    const newProduct = this.ormRepository.create({
+      name,
+      price,
+      quantity,
+    });
+
+    await this.ormRepository.save(newProduct);
+
+    return newProduct;
   }
 
   public async findByName(name: string): Promise<Product | undefined> {
-    // TODO
+    const product = await this.ormRepository.findOne({
+      where: {
+        name,
+      },
+    });
+
+    return product;
   }
 
   public async findAllById(products: IFindProducts[]): Promise<Product[]> {
-    // TODO
+    // será se todos os IDs estão separados? ou estão em objetos
+    const productsInStorage = await this.ormRepository.findByIds(products);
+
+    return productsInStorage;
   }
 
   public async updateQuantity(
     products: IUpdateProductsQuantityDTO[],
   ): Promise<Product[]> {
-    // TODO
+    // Será que não eh possível fazer operações em Batch?
+    const updateProducts: Product[] = [];
+
+    products.forEach(async product => {
+      const user = await this.ormRepository.findOne(product.id);
+
+      if (!user) {
+        throw new AppError("User don't Exists");
+      }
+
+      user.quantity = product.quantity;
+      const userUpdated = await this.ormRepository.save(user);
+
+      updateProducts.push(userUpdated);
+    });
+
+    return updateProducts;
   }
 }
 

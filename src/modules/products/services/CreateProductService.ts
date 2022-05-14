@@ -1,3 +1,4 @@
+import { getRepository } from 'typeorm';
 import { inject, injectable } from 'tsyringe';
 
 import AppError from '@shared/errors/AppError';
@@ -16,7 +17,17 @@ class CreateProductService {
   constructor(private productsRepository: IProductsRepository) {}
 
   public async execute({ name, price, quantity }: IRequest): Promise<Product> {
-    // TODO
+    const productRepository = getRepository<Product>(Product);
+
+    const newProduct = productRepository.create({
+      name,
+      price,
+      quantity,
+    });
+
+    const product = await productRepository.save(newProduct);
+
+    return product;
   }
 }
 
