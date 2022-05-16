@@ -7,6 +7,9 @@ import ICustomersRepository from '@modules/customers/repositories/ICustomersRepo
 import Order from '../infra/typeorm/entities/Order';
 import IOrdersRepository from '../repositories/IOrdersRepository';
 
+import { getRepository } from 'typeorm';
+import Customer from '@modules/customers/infra/typeorm/entities/Customer';
+
 interface IProduct {
   id: string;
   quantity: number;
@@ -26,7 +29,26 @@ class CreateOrderService {
   ) {}
 
   public async execute({ customer_id, products }: IRequest): Promise<Order> {
-    // TODO
+    const cusmoterRepository = getRepository<Customer>(Customer);
+    const orderRepository = getRepository<Order>(Order);
+
+    const customer = await cusmoterRepository.findOne(customer_id);
+
+    const newOrder = orderRepository.create({
+      customer,
+      order_products: products.map(p => ({ ...p, price: 0.99 })),
+    });
+
+    const orderSaved = await orderRepository.save(newOrder);
+
+    return orderSaved;
+
+    // console.log('Inside service');
+
+    // console.log({
+    //   customer_id,
+    //   products,
+    // });
   }
 }
 
