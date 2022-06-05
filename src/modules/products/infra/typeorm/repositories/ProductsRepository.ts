@@ -44,7 +44,6 @@ class ProductsRepository implements IProductsRepository {
   }
 
   public async findAllById(products: IFindProducts[]): Promise<Product[]> {
-    // será se todos os IDs estão separados? ou estão em objetos
     const productsInStorage = await this.ormRepository.findByIds(products);
 
     return productsInStorage;

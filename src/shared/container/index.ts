@@ -8,3 +8,18 @@ import ProductsRepository from '@modules/products/infra/typeorm/repositories/Pro
 
 import IOrdersRepository from '@modules/orders/repositories/IOrdersRepository';
 import OrdersRepository from '@modules/orders/infra/typeorm/repositories/OrdersRepository';
+
+container.registerSingleton<ICustomersRepository>(
+  'CustomerProvider',
+  CustomersRepository,
+);
+
+container.registerSingleton<IProductsRepository>(
+  'ProductProvider',
+  ProductsRepository,
+);
+
+container.registerSingleton<IOrdersRepository>(
+  'OrderProvider',
+  OrdersRepository,
+);

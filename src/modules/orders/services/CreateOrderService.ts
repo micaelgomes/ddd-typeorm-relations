@@ -7,9 +7,6 @@ import ICustomersRepository from '@modules/customers/repositories/ICustomersRepo
 import Order from '../infra/typeorm/entities/Order';
 import IOrdersRepository from '../repositories/IOrdersRepository';
 
-import { getRepository } from 'typeorm';
-import Customer from '@modules/customers/infra/typeorm/entities/Customer';
-
 interface IProduct {
   id: string;
   quantity: number;
@@ -23,32 +20,40 @@ interface IRequest {
 @injectable()
 class CreateOrderService {
   constructor(
+    @inject('OrderProvider')
     private ordersRepository: IOrdersRepository,
+    @inject('ProductProvider')
     private productsRepository: IProductsRepository,
+    @inject('CustomerProvider')
     private customersRepository: ICustomersRepository,
   ) {}
 
   public async execute({ customer_id, products }: IRequest): Promise<Order> {
-    const cusmoterRepository = getRepository<Customer>(Customer);
-    const orderRepository = getRepository<Order>(Order);
+    const customer = await this.customersRepository.findById(customer_id);
 
-    const customer = await cusmoterRepository.findOne(customer_id);
+    if (!customer) {
+      throw new AppError('Customer not in storage.');
+    }
 
-    const newOrder = orderRepository.create({
-      customer,
-      order_products: products.map(p => ({ ...p, price: 0.99 })),
+    const ids = products.map(product => ({ id: product.id }));
+    const productsInStorage = await this.productsRepository.findAllById(ids);
+
+    const order_products = products.map(product => {
+      const productStoraged = productsInStorage.find(p => product.id === p.id);
+
+      return {
+        product_id: product.id,
+        quantity: product.quantity,
+        price: Number(productStoraged?.price),
+      };
     });
 
-    const orderSaved = await orderRepository.save(newOrder);
+    const newOrder = await this.ordersRepository.create({
+      customer,
+      products: order_products,
+    });
 
-    return orderSaved;
-
-    // console.log('Inside service');
-
-    // console.log({
-    //   customer_id,
-    //   products,
-    // });
+    return newOrder;
   }
 }
 
