@@ -56,14 +56,14 @@ class ProductsRepository implements IProductsRepository {
     const updateProducts: Product[] = [];
 
     products.forEach(async product => {
-      const user = await this.ormRepository.findOne(product.id);
+      const productStoraged = await this.ormRepository.findOne(product.id);
 
-      if (!user) {
-        throw new AppError("User don't Exists");
+      if (!productStoraged) {
+        throw new AppError('No products with this ID.');
       }
 
-      user.quantity = product.quantity;
-      const userUpdated = await this.ormRepository.save(user);
+      productStoraged.quantity -= product.quantity;
+      const userUpdated = await this.ormRepository.save(productStoraged);
 
       updateProducts.push(userUpdated);
     });

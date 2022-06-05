@@ -1,3 +1,4 @@
+import AppError from '@shared/errors/AppError';
 import { inject, injectable } from 'tsyringe';
 
 import Product from '../infra/typeorm/entities/Product';
@@ -17,6 +18,12 @@ class CreateProductService {
   ) {}
 
   public async execute({ name, price, quantity }: IRequest): Promise<Product> {
+    const product = await this.productsRepository.findByName(name);
+
+    if (product) {
+      throw new AppError('Product name already existis.');
+    }
+
     const newProduct = await this.productsRepository.create({
       name,
       price,

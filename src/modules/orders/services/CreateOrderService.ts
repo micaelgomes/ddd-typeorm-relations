@@ -38,8 +38,20 @@ class CreateOrderService {
     const ids = products.map(product => ({ id: product.id }));
     const productsInStorage = await this.productsRepository.findAllById(ids);
 
+    if (productsInStorage.length !== products.length) {
+      throw new AppError('At least one product dont existis.');
+    }
+
     const order_products = products.map(product => {
       const productStoraged = productsInStorage.find(p => product.id === p.id);
+
+      if (!productStoraged) {
+        throw new AppError('No products with this ID.');
+      }
+
+      if (product.quantity > productStoraged.quantity) {
+        throw new AppError('No quantity suficient.');
+      }
 
       return {
         product_id: product.id,
@@ -53,7 +65,19 @@ class CreateOrderService {
       products: order_products,
     });
 
-    return newOrder;
+    await this.productsRepository.updateQuantity(products);
+
+    const orderDto = {
+      ...newOrder,
+      order_products: newOrder.order_products.map(p => ({
+        ...p,
+        product_id: p.product_id,
+        price: p.price.toFixed(2) as any,
+        quantity: p.quantity,
+      })),
+    };
+
+    return orderDto;
   }
 }
 
