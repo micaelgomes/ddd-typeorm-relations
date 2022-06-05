@@ -1,9 +1,7 @@
 import { getRepository, Repository } from 'typeorm';
 
-import AppError from '@shared/errors/AppError';
 import IProductsRepository from '@modules/products/repositories/IProductsRepository';
 import ICreateProductDTO from '@modules/products/dtos/ICreateProductDTO';
-import IUpdateProductsQuantityDTO from '@modules/products/dtos/IUpdateProductsQuantityDTO';
 import Product from '../entities/Product';
 
 interface IFindProducts {
@@ -49,26 +47,8 @@ class ProductsRepository implements IProductsRepository {
     return productsInStorage;
   }
 
-  public async updateQuantity(
-    products: IUpdateProductsQuantityDTO[],
-  ): Promise<Product[]> {
-    // Será que não eh possível fazer operações em Batch?
-    const updateProducts: Product[] = [];
-
-    products.forEach(async product => {
-      const productStoraged = await this.ormRepository.findOne(product.id);
-
-      if (!productStoraged) {
-        throw new AppError('No products with this ID.');
-      }
-
-      productStoraged.quantity -= product.quantity;
-      const userUpdated = await this.ormRepository.save(productStoraged);
-
-      updateProducts.push(userUpdated);
-    });
-
-    return updateProducts;
+  public async updateQuantity(product: Product): Promise<Product> {
+    return this.ormRepository.save(product);
   }
 }
 

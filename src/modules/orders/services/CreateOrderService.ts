@@ -42,30 +42,35 @@ class CreateOrderService {
       throw new AppError('At least one product dont existis.');
     }
 
-    const order_products = products.map(product => {
-      const productStoraged = productsInStorage.find(p => product.id === p.id);
+    const order_products = await Promise.all(
+      products.map(async product => {
+        const productStoraged = productsInStorage.find(
+          p => product.id === p.id,
+        );
 
-      if (!productStoraged) {
-        throw new AppError('No products with this ID.');
-      }
+        if (!productStoraged) {
+          throw new AppError('No products with this ID.');
+        }
 
-      if (product.quantity > productStoraged.quantity) {
-        throw new AppError('No quantity suficient.');
-      }
+        if (product.quantity > productStoraged.quantity) {
+          throw new AppError('No quantity suficient.');
+        }
 
-      return {
-        product_id: product.id,
-        quantity: product.quantity,
-        price: Number(productStoraged?.price),
-      };
-    });
+        productStoraged.quantity -= product.quantity;
+        await this.productsRepository.updateQuantity(productStoraged);
+
+        return {
+          product_id: product.id,
+          quantity: product.quantity,
+          price: Number(productStoraged?.price),
+        };
+      }),
+    );
 
     const newOrder = await this.ordersRepository.create({
       customer,
       products: order_products,
     });
-
-    await this.productsRepository.updateQuantity(products);
 
     const orderDto = {
       ...newOrder,
@@ -76,6 +81,8 @@ class CreateOrderService {
         quantity: p.quantity,
       })),
     };
+
+    // await this.productsRepository.updateQuantity(products);
 
     return orderDto;
   }
